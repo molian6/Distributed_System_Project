@@ -6,8 +6,13 @@ class Replica(object):
     f = None
     view = None
     ports_info = None #a map uid-> [ip, ports]
-    request_list = {} #(clientid, req_id)->value
+    request_list = {} # (req_id,value) -> count
+    received_propose_list = {} #req_id -> [client_id, proposor, value]
+    learned_list = {} # req_id -> value, executed?
+    waiting_request_list = {}
+
     num_followers = None
+    last_exec_req = None
 
     def __init__(self, f, uid, ports_info):
         self.uid = uid
@@ -49,7 +54,7 @@ class Replica(object):
             self.handle_Request(self, m)
 
     def parse_message(msg):
-        l = msg.split(msg)
+        l = msg.split(' ')
         mtype = int(l[0])
         request_id = int(l[1])
         mcontent = l[2:]
@@ -57,16 +62,44 @@ class Replica(object):
         return m
 
     def broadcast(self, m):
+        for v in self.ports_info:
+            send_message(v[0], v[1], m)
+
+    def logging(self, req_id):
+        if self.last_exec_req + 1 == req_id:
+            # logging
+            self.last_exec_req += 1
+            learned_list[req_id] = [value , True]
+            #send logging message to client
+            if req_id+1 is in self.learned_list and self.learned_list[req_id+1][1] == False:
+                self.logging(req_id+1)
+        else:
+            learned_list[req_id] = [value , False]
 
     def beProposor(self):
+        self.num_followers = 1
+        # broadcast message IAmYourLeader
+        # handle holes or not?
 
     def handle_IAmYourLeader(self, m):
+        # if sender_id > view, update self.view
+        # send YouAreMyLeader back with message = jsonify received_propose_list
 
     def handle_YouAreMyLeader(self, m):
+        # update the most recent value for each blank in received_propose_list.
+        self.num_followers += 1
+        if self.num_followers == self.f + 1:
+        #   fill the holes with NOOP
+        #   propose everything in the list
+        #   propose everything in waiting_request_list
 
     def handle_ProposeValue(self, m):
+        # if sender_id > view, update view & update
+        #   update received_propose_list
+        #   broadcast AcceptValue(proposorid + req_id + value)
 
     def handle_AcceptValue(self, m):
+        # if any value reach the majority, do logging
 
     def handle_TimeOut(self, m):
         self.view += 1
@@ -74,3 +107,6 @@ class Replica(object):
             self.beProposor()
 
     def handle_Request(self, m):
+        if self.view == self.uid:
+            #if  is leader #propose()
+            #else: add request to waiting_request_list

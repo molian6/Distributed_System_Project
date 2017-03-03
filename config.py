@@ -2,7 +2,9 @@ class Message():
     mtype = None
     #Sender_id = None
     request_id = None
-    mcontent = None
+    #mcontent = None
+    sender_id = None
+    value = None
     IAmYourLeader = 0 # Sender_id
     YouAreMyLeader = 1 # previous Sender_id, value
     ProposeValue = 2 # Sender_id value
