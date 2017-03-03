@@ -1,3 +1,5 @@
+import config
+from helper import *
 # use for sending messages by script.
 # use for testing purpose
 class Client:

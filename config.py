@@ -1,8 +1,8 @@
 class Message():
     mtype = None
-    mcontent = None
     #Sender_id = None
     request_id = None
+    mcontent = None
     IAmYourLeader = 0 # Sender_id
     YouAreMyLeader = 1 # previous Sender_id, value
     ProposeValue = 2 # Sender_id value

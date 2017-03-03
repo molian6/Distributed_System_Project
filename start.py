@@ -3,7 +3,7 @@
 # Manage meta data for replicas
 
 
-import click, paxoservice, os, shutil
+import click, config, replica, os, shutil
 
 # Configure command line options
 DEFAULT_NUM_FAILURES = 2
