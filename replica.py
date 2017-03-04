@@ -103,5 +103,6 @@ class Replica(object):
 
     def handle_Request(self, m):
         if self.view == self.uid:
-            #if  is leader #propose()
+            if self.num_followers == self.f + 1:
+                self.broadcast()
             #else: add request to waiting_request_list
