@@ -77,6 +77,7 @@ class Replica(object):
         self.request_mapping = {}
         msg = Message(0, None, None, None, self.uid, None, None)
         self.broadcast_msg(encode_message(msg)))
+
         # broadcast message IAmYourLeader
         # handle holes or not?
 
@@ -110,6 +111,14 @@ class Replica(object):
 
     def handle_AcceptValue(self, m):
         # if any value reach the majority, do logging
+        m = docode_message(m)
+        p = (m.request_id , m.value)
+        if p not in self.request_count:
+            self.request_count[p] = 1
+        else:
+            self.request_count[p] += 1
+        if self.request_count[p] == self.f + 1:
+            self.logging(m.request_id)
 
     def handle_TimeOut(self, m):
         self.view += 1
@@ -119,5 +128,21 @@ class Replica(object):
     def handle_Request(self, m):
         if self.view == self.uid:
             if self.num_followers == self.f + 1:
-                self.broadcast()
-            #else: add request to waiting_request_list
+                # has enough followers
+                m = decode_message(m)
+                if (m.client_id , m.client_request_id) not in self.request_mapping.keys():
+                    # edit message
+                    m.sender_id = self.uid
+                    #req_id is next index in request_mapping
+                    if len(self.request_mapping) == 0: req_id = 0
+                    else: req_id = max(self.request_mapping.values()) + 1
+                    m.request_id = req_id
+                    # encode message
+                    msg = encode_message(m)
+                    # broadcast message
+                    self.broadcast(m)
+                    # add req_id to mapping list
+                    self.request_mapping[(m.client_id , m.client_request_id)] = req_id
+            else:
+                # waitting for followers, add request to waitlist
+                self.waiting_request_list.append(m)
