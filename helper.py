@@ -18,6 +18,7 @@ def encode_message(m):
     message = {
         "mtype": m.mtype,
         "request_id": m.request_id,
+        "client_id": m.client_id,
         "client_request_id": m.client_request_id,
         "sender_id": m.sender_id,
         "value": m.value,
@@ -27,7 +28,7 @@ def encode_message(m):
 
 def decode_message(msg):
     msg_dict = json.loads(msg)
-    m = config.Message(msg_dict["mtype"], msg_dict["request_id"], msg_dict["client_request_id"], msg_dict["sender_id"], msg_dict["value"], msg_dict["received_propose_list"])
+    m = config.Message(msg_dict["mtype"], msg_dict["request_id"], msg_dict["client_id"], ["client_request_id"], msg_dict["sender_id"], msg_dict["value"], msg_dict["received_propose_list"])
     return m
 
 def debug_print(debug_str, num):

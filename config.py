@@ -2,6 +2,7 @@ class Message():
     mtype = None
     #Sender_id = None
     request_id = None
+    client_id = None
     client_request_id = None
     #mcontent = None
     sender_id = None
@@ -13,7 +14,8 @@ class Message():
     AcceptValue = 3 # value
     TimeOut = 4
     Request = 5 # value
-    def __init__(mtype = None, request_id = None, client_request_id = None, sender_id = None, value = None, received_propose_list = None):
+    Logged = 6
+    def __init__(mtype = None, request_id = None, client_id = None, client_request_id = None, sender_id = None, value = None, received_propose_list = None):
         self.mtype = mtype
         self.request_id = request_id
         self.client_request_id = client_request_id
