@@ -9,7 +9,7 @@ class Replica(object):
     request_count = {} # (req_id,value) -> count
     received_propose_list = {} #req_id -> [client_id, proposor, value]
     learned_list = {} # req_id -> value, executed?
-    waiting_request_list = {}
+    waiting_request_list = []
     request_mapping = {} #(client_id, client_request_id) -> req_id
 
     num_followers = None
@@ -57,7 +57,7 @@ class Replica(object):
     def sleep_forever(self):
 
 
-    def broadcast(self, m):
+    def broadcast_msg(self, m):
         for v in self.ports_info:
             send_message(v[0], v[1], m)
 
@@ -74,6 +74,7 @@ class Replica(object):
 
     def beProposor(self):
         self.num_followers = 1
+        self.request_mapping = {}
 
         # broadcast message IAmYourLeader
         # handle holes or not?
@@ -98,6 +99,14 @@ class Replica(object):
 
     def handle_AcceptValue(self, m):
         # if any value reach the majority, do logging
+        m = docode_message(m)
+        p = (m.request_id , m.value)
+        if p not in self.request_count:
+            self.request_count[p] = 1
+        else: 
+            self.request_count[p] += 1
+        if self.request_count[p] == self.f + 1:
+            self.logging(m.request_id)
 
     def handle_TimeOut(self, m):
         self.view += 1
@@ -107,5 +116,22 @@ class Replica(object):
     def handle_Request(self, m):
         if self.view == self.uid:
             if self.num_followers == self.f + 1:
-                self.broadcast()
-            #else: add request to waiting_request_list
+                # has enough followers
+                m = decode_message(m)
+                if (m.client_id , m.client_request_id) not in self.request_mapping.keys():
+                    # edit message
+                    m.sender_id = self.uid
+                    #req_id is next index in request_mapping
+                    if len(self.request_mapping) == 0: req_id = 0
+                    else: req_id = max(self.request_mapping.values()) + 1
+                    m.request_id = req_id
+                    # encode message
+                    msg = encode_message(m)
+                    # broadcast message
+                    self.broadcast(m)
+                    # add req_id to mapping list
+                    self.request_mapping[(m.client_id , m.client_request_id)] = req_id
+            else:
+                # waitting for followers, add request to waitlist
+                self.waiting_request_list.append(m)
+
