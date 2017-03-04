@@ -9,7 +9,7 @@ class Replica(object):
     request_count = {} # (req_id,value) -> count
     received_propose_list = {} #req_id -> [client_id, proposor, value]
     learned_list = {} # req_id -> value, executed?
-    waiting_request_list = {}
+    waiting_request_list = []
     request_mapping = {} #(client_id, client_request_id) -> req_id
 
     num_followers = None
@@ -57,7 +57,7 @@ class Replica(object):
     def sleep_forever(self):
 
 
-    def broadcast(self, m):
+    def broadcast_msg(self, m):
         for v in self.ports_info:
             send_message(v[0], v[1], m)
 
@@ -73,14 +73,20 @@ class Replica(object):
             learned_list[req_id] = [value , False]
 
     def beProposor(self):
-        self.num_followers = 1
-
+        self.num_followers = 0
+        self.request_mapping = {}
+        msg = Message(0, None, None, None, self.uid, None, None)
+        self.broadcast_msg(encode_message(msg)))
         # broadcast message IAmYourLeader
         # handle holes or not?
 
     def handle_IAmYourLeader(self, m):
         # if sender_id > view, update self.view
         # send YouAreMyLeader back with message = jsonify received_propose_list
+        if m.sender_id >= self.view:
+            self.view = m.sender_id
+            msg = Message(1, None, None, None, self.uid, None, self.received_propose_list)
+            send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encode_message(msg))
 
     def handle_YouAreMyLeader(self, m):
         # update the most recent value for each blank in received_propose_list.
@@ -95,6 +101,12 @@ class Replica(object):
         # if sender_id > view, update view & update
         #   update received_propose_list
         #   broadcast AcceptValue(proposorid + req_id + value)
+        if m.sender_id >= self.view:
+            self.view = m.sender_id
+            self.received_propose_list[m.request_id] = [m.client_id, m.sender_id, m.value]#TODO: how to retrive client id and prots info
+            msg = Message(3, m.request_id, m.client_id, m.client_request_id, self.uid, m.value, None)
+            self.broadcast_msg(encode_message(msg))
+
 
     def handle_AcceptValue(self, m):
         # if any value reach the majority, do logging

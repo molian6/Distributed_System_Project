@@ -15,7 +15,8 @@ class Message():
     TimeOut = 4
     Request = 5 # value
     Logged = 6
-    def __init__(mtype = None, request_id = None, client_id = None, client_request_id = None, sender_id = None, value = None, received_propose_list = None):
+    def __init__(mtype = None, request_id = None, client_id = None, \
+    client_request_id = None, sender_id = None, value = None, received_propose_list = None):
         self.mtype = mtype
         self.request_id = request_id
         self.client_request_id = client_request_id
