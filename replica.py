@@ -53,12 +53,20 @@ class Replica(object):
         elif (m.mtype == 0):
             self.handle_Request(self, m)
 
-    def parse_message(msg):
-        l = msg.split(' ')
-        mtype = int(l[0])
-        request_id = int(l[1])
-        mcontent = l[2:]
-        m = config.Message(mtype, request_id, mcontent)
+    def encode_message(m):
+        message = {
+            "mtype": m.mtype,
+            "request_id": m.request_id,
+            "client_request_id": m.client_request_id,
+            "sender_id": m.sender_id,
+            "value": m.value,
+            "received_propose_list": m.received_propose_list
+        }
+        return json.dumps(msg)
+
+    def decode_message(msg):
+        msg_dict = json.loads(msg)
+        m = config.Message(msg_dict["mtype"], msg_dict["request_id"], msg_dict["client_request_id"], msg_dict["sender_id"], msg_dict["value"], msg_dict["received_propose_list"])
         return m
 
     def broadcast(self, m):
