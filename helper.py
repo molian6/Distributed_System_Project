@@ -1,4 +1,5 @@
 import socket
+import ruamel.yaml as yaml
 
 def send_message(host, port, m):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -27,7 +28,7 @@ def encode_message(m):
     return json.dumps(msg)
 
 def decode_message(msg):
-    msg_dict = json.loads(msg)
+    msg_dict = yaml.safe_load(msg)
     m = config.Message(msg_dict["mtype"], msg_dict["request_id"], msg_dict["client_id"], ["client_request_id"], msg_dict["sender_id"], msg_dict["value"], msg_dict["received_propose_list"])
     return m
 

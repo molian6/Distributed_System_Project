@@ -6,10 +6,11 @@ class Replica(object):
     f = None
     view = None
     ports_info = None #a map uid-> [ip, ports]
-    request_list = {} # (req_id,value) -> count
+    request_count = {} # (req_id,value) -> count
     received_propose_list = {} #req_id -> [client_id, proposor, value]
     learned_list = {} # req_id -> value, executed?
     waiting_request_list = {}
+    request_mapping = {} #(client_id, client_request_id) -> req_id
 
     num_followers = None
     last_exec_req = None
@@ -54,7 +55,7 @@ class Replica(object):
             self.handle_Request(self, m)
 
     def sleep_forever(self):
-        
+
 
     def broadcast(self, m):
         for v in self.ports_info:
@@ -73,6 +74,7 @@ class Replica(object):
 
     def beProposor(self):
         self.num_followers = 1
+
         # broadcast message IAmYourLeader
         # handle holes or not?
 
@@ -87,6 +89,7 @@ class Replica(object):
         #   fill the holes with NOOP
         #   propose everything in the list
         #   propose everything in waiting_request_list
+
 
     def handle_ProposeValue(self, m):
         # if sender_id > view, update view & update
