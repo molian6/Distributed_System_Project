@@ -75,11 +75,9 @@ class Replica(object):
     def beProposor(self):
         self.num_followers = 0
         self.request_mapping = {}
+        # broadcast message IAmYourLeader
         msg = Message(0, None, None, None, self.uid, None, None)
         self.broadcast_msg(encode_message(msg)))
-
-        # broadcast message IAmYourLeader
-        # handle holes or not?
 
     def handle_IAmYourLeader(self, m):
         # if sender_id > view, update self.view
@@ -92,11 +90,43 @@ class Replica(object):
     def handle_YouAreMyLeader(self, m):
         # update the most recent value for each blank in received_propose_list.
         self.num_followers += 1
-        if self.num_followers == self.f + 1:
-        #   fill the holes with NOOP
-        #   propose everything in the list
-        #   propose everything in waiting_request_list
+        for key, x in m.received_propose_list.iteritems():
+            # if update every value to the newest proposer value
+            if x[1] > self.received_propose_list[key][1]:
+                self.received_propose_list[key] = x
 
+        if self.num_followers == self.f + 1:
+            #   fill the holes with NOOP
+            for i in range(0,max(self.received_propose_list.keys(), key = int)):
+                if not i in self.received_propose_list:
+                    self.received_propose_list[i] = [-1, self.uid, "NOOP"]
+
+            #   propose everything in the list
+            for key, x in self.received_propose_list.iteritems():
+                # TODO: sender_id should be myself or proposor???
+                # TODO: do we need to know client_request_id???
+                msg = Message(2, key, x[1], None, self.uid, x[2], None)
+                self.broadcast_msg(encode_message(msg)))
+
+            #   propose everything in waiting_request_list
+            while len(self.waiting_request_list) != 0:
+                m = self.waiting_request_list.pop(0)
+                m = decode_message(m)
+                if (m.client_id , m.client_request_id) not in self.request_mapping.keys():
+                    # edit message
+                    m.sender_id = self.uid
+                    #req_id is next index in request_mapping
+                    if len(self.request_mapping) == 0: req_id = 0
+                    else: req_id = max(self.request_mapping.values()) + 1
+                    m.request_id = req_id
+                    # change message type to proposeValue
+                    m.mtype = 2
+                    # encode message
+                    msg = encode_message(m)
+                    # broadcast message
+                    self.broadcast_msg(msg)
+                    # add req_id to mapping list
+                    self.request_mapping[(m.client_id , m.client_request_id)] = req_id
 
     def handle_ProposeValue(self, m):
         # if sender_id > view, update view & update
@@ -137,10 +167,12 @@ class Replica(object):
                     if len(self.request_mapping) == 0: req_id = 0
                     else: req_id = max(self.request_mapping.values()) + 1
                     m.request_id = req_id
+                    # change message type to proposeValue
+                    m.mtype = 2
                     # encode message
                     msg = encode_message(m)
                     # broadcast message
-                    self.broadcast(m)
+                    self.broadcast_msg(msg)
                     # add req_id to mapping list
                     self.request_mapping[(m.client_id , m.client_request_id)] = req_id
             else:
