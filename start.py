@@ -20,10 +20,11 @@ def Paxoservice():
     	p = multiprocessing.Process(target = client.Client , args = (None , None, i , None , e))
     	p.start()
     	client_list.append([p , e])
-
+    replica_list = []
     for i in range(2*DEFAULT_NUM_FAILURES+1):
         p = multiprocessing.Process(target=replica.Replica, args = (DEFAULT_NUM_FAILURES , i , None , None)) #f, ID, port_info
         p.start()
+        replica_list.append(p)
     # operation here
 
 if __name__ == "__main__":
