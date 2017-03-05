@@ -84,7 +84,8 @@ class Replica(object):
             # logging
             self.last_exec_req += 1
             self.write_to_disk(self.last_exec_req)
-            self.send_response_to_client(self.last_exec_req)
+            if self.received_propose_list[req_id][2] != "NOOP":
+                self.send_response_to_client(self.last_exec_req)
             learned_list[req_id] = [value , True]
             #send logging message to client
             if req_id+1 is in self.learned_list and self.learned_list[req_id+1][1] == False:
@@ -95,13 +96,9 @@ class Replica(object):
     def beProposor(self):
         self.num_followers = 0
         self.request_mapping = {}
-<<<<<<< HEAD
-=======
-
->>>>>>> fae1818aec4bf2b10cc476ae9246c1870537eb8a
-        # broadcast message IAmYourLeader
         msg = Message(0, None, None, None, self.uid, None, None)
         self.broadcast_msg(encode_message(msg))
+
 
     def handle_IAmYourLeader(self, m):
         # if sender_id > view, update self.view
@@ -133,10 +130,7 @@ class Replica(object):
                 # TODO: do we need to know client_request_id???
                 msg = Message(2, key, x[0], x[3], self.uid, x[2], None)
                 self.broadcast_msg(encode_message(msg))
-<<<<<<< HEAD
-=======
                 self.request_mapping[(x[0] , x[3])] = key
->>>>>>> fae1818aec4bf2b10cc476ae9246c1870537eb8a
 
             #   propose everything in waiting_request_list
             while len(self.waiting_request_list) != 0:
