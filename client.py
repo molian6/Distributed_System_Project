@@ -5,7 +5,7 @@ from helper import *
 # use for sending messages by script.
 # use for testing purpose
 class Client:
-    self.time = None
+    time = None
     e = None
     my_ip = None
     my_port = None

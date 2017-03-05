@@ -88,7 +88,7 @@ class Replica(object):
                 self.send_response_to_client(self.last_exec_req)
             learned_list[req_id] = [value , True]
             #send logging message to client
-            if req_id+1 is in self.learned_list and self.learned_list[req_id+1][1] == False:
+            if req_id+1 in self.learned_list and self.learned_list[req_id+1][1] == False:
                 self.logging(req_id+1)
         else:
             learned_list[req_id] = [value , False]

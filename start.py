@@ -23,19 +23,20 @@ def Paxoservice():
 	server_ports_info = create_ports_map(2*DEFAULT_NUM_FAILURES+1, "127.0.0.", 5000)
 	client_ports_info = create_ports_map(DEFAULT_NUM_CLIENTS, "128.0.0.", 5000)
 
-    # create replicas
-    client_list = [] #[process , event]
-    for i in range(DEFAULT_NUM_CLIENTS):
-    	e = multiprocessing.Event()
-    	p = multiprocessing.Process(target = client.Client , args = (client_ports_info[i][0] , client_ports_info[i][1], i , server_ports_info , e))
-    	p.start()
-    	client_list.append([p , e])
-    replica_list = []
-    for i in range(2*DEFAULT_NUM_FAILURES+1):
-        p = multiprocessing.Process(target=replica.Replica, args = (DEFAULT_NUM_FAILURES , i , server_ports_info , client_ports_info)) #f, ID, port_info
-        p.start()
-        replica_list.append(p)
-    # operation here
+	# create replicas
+	client_list = []
+	for i in range(DEFAULT_NUM_CLIENTS):
+		e = multiprocessing.Event()
+		p = multiprocessing.Process(target = client.Client , args = (client_ports_info[i][0] , client_ports_info[i][1], i , server_ports_info , e))
+		p.start()
+		client_list.append([p , e])
+
+	replica_list = []
+	for i in range(2*DEFAULT_NUM_FAILURES+1):
+		p = multiprocessing.Process(target=replica.Replica, args = (DEFAULT_NUM_FAILURES , i , server_ports_info , client_ports_info)) #f, ID, port_info
+		p.start()
+		replica_list.append(p)
+	# operation here
 
 
 if __name__ == "__main__":
