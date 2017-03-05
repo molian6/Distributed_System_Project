@@ -126,11 +126,10 @@ class Replica(object):
 
             #   propose everything in the list
             for key, x in self.received_propose_list.iteritems():
-                # TODO: sender_id should be myself or proposor???
-                # TODO: do we need to know client_request_id???
                 msg = Message(2, key, x[0], x[3], self.uid, x[2], None)
                 self.broadcast_msg(encode_message(msg))
-                self.request_mapping[(x[0] , x[3])] = key
+                if x[2] != 'NOOP':
+                    self.request_mapping[(x[0] , x[3])] = key
 
             #   propose everything in waiting_request_list
             while len(self.waiting_request_list) != 0:
