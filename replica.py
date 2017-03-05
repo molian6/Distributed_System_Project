@@ -75,12 +75,7 @@ class Replica(object):
     def beProposor(self):
         self.num_followers = 0
         self.request_mapping = {}
-<<<<<<< HEAD
-        msg = Message(0, None, None, None, self.uid, None, None)
-        self.broadcast_msg(encode_message(msg))
 
-=======
->>>>>>> c89ca540dea2becc32f100461017f31591cea8d3
         # broadcast message IAmYourLeader
         msg = Message(0, None, None, None, self.uid, None, None)
         self.broadcast_msg(encode_message(msg))
@@ -98,21 +93,24 @@ class Replica(object):
         self.num_followers += 1
         for key, x in m.received_propose_list.iteritems():
             # if update every value to the newest proposer value
-            if x[1] > self.received_propose_list[key][1]:
+            if key not in self.received_propose_list.keys():
+                self.received_propose_list[key] = x
+            elif x[1] > self.received_propose_list[key][1]:
                 self.received_propose_list[key] = x
 
         if self.num_followers == self.f + 1:
             #   fill the holes with NOOP
             for i in range(0,max(self.received_propose_list.keys(), key = int)):
                 if not i in self.received_propose_list:
-                    self.received_propose_list[i] = [-1, self.uid, "NOOP"]
+                    self.received_propose_list[i] = [-1, self.uid, "NOOP", None]
 
             #   propose everything in the list
             for key, x in self.received_propose_list.iteritems():
                 # TODO: sender_id should be myself or proposor???
                 # TODO: do we need to know client_request_id???
-                msg = Message(2, key, x[1], None, self.uid, x[2], None)
-                self.broadcast_msg(encode_message(msg)))
+                msg = Message(2, key, x[0], x[3], self.uid, x[2], None)
+                self.broadcast_msg(encode_message(msg))
+                self.request_mapping[(x[0] , x[3])] = key
 
             #   propose everything in waiting_request_list
             while len(self.waiting_request_list) != 0:
