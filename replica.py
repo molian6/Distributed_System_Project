@@ -76,7 +76,7 @@ class Replica(object):
         self.num_followers = 0
         self.request_mapping = {}
         msg = Message(0, None, None, None, self.uid, None, None)
-        self.broadcast_msg(encode_message(msg)))
+        self.broadcast_msg(encode_message(msg))
 
         # broadcast message IAmYourLeader
         # handle holes or not?
@@ -104,7 +104,7 @@ class Replica(object):
         #   broadcast AcceptValue(proposorid + req_id + value)
         if m.sender_id >= self.view:
             self.view = m.sender_id
-            self.received_propose_list[m.request_id] = [m.client_id, m.sender_id, m.value]#TODO: how to retrive client id and prots info
+            self.received_propose_list[m.request_id] = [m.client_id, m.sender_id, m.value]#TODO: how to retrive client ip and ports info
             msg = Message(3, m.request_id, m.client_id, m.client_request_id, self.uid, m.value, None)
             self.broadcast_msg(encode_message(msg))
 
