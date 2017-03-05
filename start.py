@@ -30,10 +30,11 @@ def Paxoservice():
     	p = multiprocessing.Process(target = client.Client , args = (client_ports_info[i][0] , client_ports_info[i][1], i , server_ports_info , e))
     	p.start()
     	client_list.append([p , e])
-
+    replica_list = []
     for i in range(2*DEFAULT_NUM_FAILURES+1):
         p = multiprocessing.Process(target=replica.Replica, args = (DEFAULT_NUM_FAILURES , i , server_ports_info , client_ports_info)) #f, ID, port_info
         p.start()
+        replica_list.append(p)
     # operation here
 
 
