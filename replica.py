@@ -95,6 +95,10 @@ class Replica(object):
     def beProposor(self):
         self.num_followers = 0
         self.request_mapping = {}
+<<<<<<< HEAD
+=======
+
+>>>>>>> fae1818aec4bf2b10cc476ae9246c1870537eb8a
         # broadcast message IAmYourLeader
         msg = Message(0, None, None, None, self.uid, None, None)
         self.broadcast_msg(encode_message(msg))
@@ -112,7 +116,9 @@ class Replica(object):
         self.num_followers += 1
         for key, x in m.received_propose_list.iteritems():
             # if update every value to the newest proposer value
-            if x[1] > self.received_propose_list[key][1]:
+            if key not in self.received_propose_list.keys():
+                self.received_propose_list[key] = x
+            elif x[1] > self.received_propose_list[key][1]:
                 self.received_propose_list[key] = x
 
         if self.num_followers == self.f + 1:
@@ -127,6 +133,10 @@ class Replica(object):
                 # TODO: do we need to know client_request_id???
                 msg = Message(2, key, x[0], x[3], self.uid, x[2], None)
                 self.broadcast_msg(encode_message(msg))
+<<<<<<< HEAD
+=======
+                self.request_mapping[(x[0] , x[3])] = key
+>>>>>>> fae1818aec4bf2b10cc476ae9246c1870537eb8a
 
             #   propose everything in waiting_request_list
             while len(self.waiting_request_list) != 0:
