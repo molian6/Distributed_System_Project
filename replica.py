@@ -77,7 +77,7 @@ class Replica(object):
         self.request_mapping = {}
         # broadcast message IAmYourLeader
         msg = Message(0, None, None, None, self.uid, None, None)
-        self.broadcast_msg(encode_message(msg)))
+        self.broadcast_msg(encode_message(msg))
 
     def handle_IAmYourLeader(self, m):
         # if sender_id > view, update self.view
@@ -134,7 +134,7 @@ class Replica(object):
         #   broadcast AcceptValue(proposorid + req_id + value)
         if m.sender_id >= self.view:
             self.view = m.sender_id
-            self.received_propose_list[m.request_id] = [m.client_id, m.sender_id, m.value]#TODO: how to retrive client id and prots info
+            self.received_propose_list[m.request_id] = [m.client_id, m.sender_id, m.value]#TODO: how to retrive client ip and ports info
             msg = Message(3, m.request_id, m.client_id, m.client_request_id, self.uid, m.value, None)
             self.broadcast_msg(encode_message(msg))
 
