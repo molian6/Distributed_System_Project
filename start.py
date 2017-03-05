@@ -3,25 +3,29 @@
 # Manage meta data for replicas
 
 
-import click, config, replica, os, shutil
+import click, config, replica, os, shutil, client
+import time, multiprocessing
 
 # Configure command line options
 DEFAULT_NUM_FAILURES = 2
+DEFAULT_NUM_CLIENTS = 2
 DEFAULT_PORT_NUM = 6000
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-@click.command(context_settings=CONTEXT_SETTINGS)
+def Paxoservice():
+    # create replicas
+    client_list = [] #[process , event]
+    for i in range(DEFAULT_NUM_CLIENTS):
+    	e = multiprocessing.Event()
+    	p = multiprocessing.Process(target = client.Client , args = (None , None, i , None , e))
+    	p.start()
+    	client_list.append([p , e])
 
-@click.option("--num_failures", "-f", "num_failures",
-    default=DEFAULT_NUM_FAILURES,
-    help="Number of failures this server can tolerate, default " + str(DEFAULT_NUM_WORKERS))
+    for i in range(2*DEFAULT_NUM_FAILURES+1):
+        p = multiprocessing.Process(target=replica.Replica, args = (DEFAULT_NUM_FAILURES , i , None , None)) #f, ID, port_info
+        p.start()
+    # operation here
 
-def main(num_failures=DEFAULT_NUM_FAILURES):
-    for i in range(2*num_failures+1):
-        process_list[i] = Process(target=replica.Replica, args = (f, i, someport_info)) #f, ID, port_info
-        process_list[i].start()
-  # Create a new master and let it take over
-  # master_ = paxoservice.Paxoservice(num_failures)
 
 if __name__ == "__main__":
-  main()
+  Paxoservice()
