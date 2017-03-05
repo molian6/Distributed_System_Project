@@ -1,7 +1,7 @@
 import socket
 import ruamel.yaml as yaml
 
-def send_message(host, port, m):
+def send_message(host, port_number, m):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     if s.connect_ex((host, port_number)) == 0:
