@@ -27,5 +27,6 @@ def Paxoservice():
         replica_list.append(p)
     # operation here
 
+
 if __name__ == "__main__":
   Paxoservice()
