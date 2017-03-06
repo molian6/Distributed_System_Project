@@ -25,6 +25,7 @@ class Replica(object):
         self.client_ports_info = client_ports_info
         self.last_exec_req = -1
         self.receive_socket = create_listen_sockets(self.ports_info[self.uid][0], self.ports_info[self.uid][1])
+        print "create success!!!"
         log_file = 'log%d.txt'%(self.uid)
         with open(log_file , 'w') as fid:
             fid.write('Log for replica %d:\n' % (self.uid))
