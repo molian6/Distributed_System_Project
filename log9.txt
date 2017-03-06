@@ -1,4 +1,4 @@
-Log for replica 3:
+Log for replica 9:
 request 0: This is message 0 from client 3 !!!
 request 1: This is message 0 from client 2 !!!
 request 2: This is message 0 from client 4 !!!

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from helper import *
 # Implement the protocol each replica will run
 class Replica(object):
+    debug = False
     uid = None
     f = None
     view = None
@@ -19,7 +20,7 @@ class Replica(object):
     num_followers = None
     last_exec_req = None
 
-    def __init__(self, f, uid, ports_info, client_ports_info):
+    def __init__(self, f, uid, ports_info, client_ports_info, debug):
         self.uid = uid
         self.f = f
         self.ports_info = ports_info
@@ -27,6 +28,7 @@ class Replica(object):
         self.last_exec_req = -1
         self.receive_socket = create_listen_sockets(self.ports_info[self.uid][0], self.ports_info[self.uid][1])
         self.view = -1
+        self.debug = debug
         print "replica %d starts running at %s." % (self.uid , time.ctime(int(time.time())))
         self.log_file = 'log%d.txt'%(self.uid)
         with open(self.log_file , 'w') as fid:
@@ -80,17 +82,18 @@ class Replica(object):
 
     def send_response_to_client(self , req_id):
         client_id = self.received_propose_list[req_id][0]
-        print client_id
-        msg = Message(6, None, None, None, None, None, None)
+        client_request_id = self.received_propose_list[req_id][3]
+        msg = Message(6, None, None, client_request_id, None, None, None)
         send_message(self.client_ports_info[client_id][0], self.client_ports_info[client_id][1], encode_message(msg))
 
-    def logging(self, req_id):
-        value = self.received_propose_list[req_id][2]
+    def logging(self, m):
+        value = m.value
+        req_id = m.request_id
         if self.last_exec_req + 1 == req_id:
             # logging
             self.last_exec_req += 1
             self.write_to_disk(self.last_exec_req)
-            if self.received_propose_list[req_id][2] != "NOOP":
+            if value != "NOOP":
                 self.send_response_to_client(self.last_exec_req)
             self.learned_list[req_id] = [value , True]
             #send logging message to client
@@ -107,18 +110,18 @@ class Replica(object):
 
 
     def handle_IAmYourLeader(self, m):
-        print 'handle_IAmYourLeader', m
+        if self.debug:
+            print 'handle_IAmYourLeader', m
         # if sender_id > view, update self.view
         # send YouAreMyLeader back with message = jsonify received_propose_list
-        print m.sender_id , self.view
         if m.sender_id >= self.view:
             self.view = m.sender_id
             msg = Message(1, None, None, None, self.uid, None, self.received_propose_list)
-            print self.ports_info[self.view][0],self.ports_info[self.view][1]
+            #print self.ports_info[self.view][0],self.ports_info[self.view][1]
             send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encode_message(msg))
 
     def handle_YouAreMyLeader(self, m):
-        print 'handle_YouAreMyLeader', m
+        if self.debug: print 'handle_YouAreMyLeader', m
         # update the most recent value for each blank in received_propose_list.
         self.num_followers += 1
         for key, x in m.received_propose_list.iteritems():
@@ -163,20 +166,19 @@ class Replica(object):
                     self.request_mapping[(m.client_id , m.client_request_id)] = req_id
 
     def handle_ProposeValue(self, m):
-        print 'handle_ProposeValue', m
+        if self.debug: print 'handle_ProposeValue', m
         # if sender_id > view, update view & update
         #   update received_propose_list
         #   broadcast AcceptValue(proposorid + req_id + value)
         if m.sender_id >= self.view:
             self.view = m.sender_id
-            print m.request_id, m.client_id, m.client_request_id, m.value, m.sender_id
             self.received_propose_list[m.request_id] = [m.client_id, m.sender_id, m.value, m.client_request_id]
             msg = Message(3, m.request_id, m.client_id, m.client_request_id, self.uid, m.value, None)
             self.broadcast_msg(encode_message(msg))
 
 
     def handle_AcceptValue(self, m):
-        print 'handle_AcceptValue', m
+        if self.debug: print 'handle_AcceptValue', m
         # if any value reach the majority, do logging
         p = (m.request_id , m.value)
         if p not in self.request_count:
@@ -184,16 +186,16 @@ class Replica(object):
         else:
             self.request_count[p] += 1
         if self.request_count[p] == self.f + 1:
-            self.logging(m.request_id)
+            self.logging(m)
 
     def handle_TimeOut(self, m):
-        print 'handle_TimeOut', m
+        if self.debug: print 'handle_TimeOut', m
         self.view += 1
         if (self.view == self.uid):
             self.beProposor()
 
     def handle_Request(self, m):
-        print 'handle_request', m
+        if self.debug: print 'handle_request', m
         if self.view == self.uid:
             if self.num_followers >= self.f + 1:
                 # has enough followers
@@ -206,7 +208,7 @@ class Replica(object):
                     m.request_id = req_id
                     # change message type to proposeValue
                     m.mtype = 2
-                    print m.request_id, m.client_id, m.client_request_id, m.value
+                    #print m.request_id, m.client_id, m.client_request_id, m.value
                     # encode message
                     msg = encode_message(m)
                     # broadcast message

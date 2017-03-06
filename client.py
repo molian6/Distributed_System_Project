@@ -31,7 +31,7 @@ class Client:
         while True:
             #self.time = time.time()
             e.wait()
-            print 'client %d send message %d at time %s.' % (self.client_id , self.client_request_id , time.ctime(int(time.time())))
+            print 'Client %d send message %d at time %s.' % (self.client_id , self.client_request_id , time.ctime(int(time.time())))
             self.client_send_message()
             e.clear()
 
@@ -50,11 +50,16 @@ class Client:
                 max_data = 1024
                 all_data = ""
                 while True:
-                    message = replicasocket.recv(max_data)
-                    all_data += message.decode("utf-8")
-
-                    if len(message) != max_data:
-                        break
+                    try: 
+                        message = replicasocket.recv(max_data)
+                        all_data += message.decode("utf-8")
+                        if len(message) != max_data:
+                            break
+                    except socket.error, e:
+                        if str(e) == "[Errno 35] Resource temporarily unavailable": 
+                            time.sleep(0.1)
+                        else:
+                            raise e
                 replicasocket.close()
                 m = decode_message(all_data)
                 if m.client_request_id == self.client_request_id:
@@ -67,6 +72,12 @@ class Client:
             except socket.timeout:
                 print 'Client %d request %d timeout.' % (self.client_id , self.client_request_id)
                 self.view = self.view + 1
-                #broadcast view+1 to every replica
+                msg = Message(4, None, None, None, None, None, None)
+                self.broadcast_msg(encode_message(msg))
                 self.timeout *= 2
                 self.client_send_message()
+
+    def broadcast_msg(self, m):
+        for key in self.ports_info.keys():
+            v = self.ports_info[key]
+            send_message(v[0], v[1], m)
