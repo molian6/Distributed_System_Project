@@ -22,8 +22,8 @@ def Paxoservice():
 
 	server_ports_info = create_ports_map(2*DEFAULT_NUM_FAILURES+1, "127.0.0.1", 5500)
 	client_ports_info = create_ports_map(DEFAULT_NUM_CLIENTS, "127.0.0.1", 6500)
-	print server_ports_info
-	print client_ports_info
+	#print server_ports_info
+	#print client_ports_info
 	# create replicas
 	client_list = []
 	for i in range(DEFAULT_NUM_CLIENTS):
@@ -39,7 +39,13 @@ def Paxoservice():
 		replica_list.append(p)
 	print 'Create %d replicas successfully!' % (2*DEFAULT_NUM_FAILURES+1)
 	# operation here
+
+	time.sleep(2)
+	client_list[0][1].set()
 	time.sleep(3)
+	
+
+	# terminate
 	for p in client_list:
 		p[0].terminate()
 		p[0].join()

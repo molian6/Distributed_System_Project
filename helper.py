@@ -11,8 +11,8 @@ def send_message(host, port_number, m):
     s.close()
 
 def create_listen_sockets(host, port_number):
-    print "#############"
-    print host,port_number
+    #print "#############"
+    #print host,port_number
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((host, port_number))
