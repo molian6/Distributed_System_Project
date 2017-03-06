@@ -38,31 +38,35 @@ class Client:
     def client_send_message(self):
         m = 'This is message %d from client %d !!!' % (self.client_request_id, self.client_id)
         msg = Message(5, None, self.client_id, self.client_request_id, None, m, None);
-        encodeded_msg = encode_message(msg)
-        send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encodeded_msg)
-
-        self.client_listen_socket.settimeout(self.timeout)
+        encoded_msg = encode_message(msg)
+        send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encoded_msg)
+        nextTimeout = self.timeout
         # nextTimeout = time.time() + self.timeout
-        try:
-            replicasocket, address = self.client_listen_socket.accept()
-            max_data = 1024
-            all_data = ""
+        while True:    
+            self.client_listen_socket.settimeout(nextTimeout)
+            try:
+                t = time.time()
+                replicasocket, address = self.client_listen_socket.accept()
+                max_data = 1024
+                all_data = ""
+                while True:
+                    message = replicasocket.recv(max_data)
+                    all_data += message.decode("utf-8")
 
-            while True:
-                message = replicasocket.recv(max_data)
-                all_data += message.decode("utf-8")
-
-                if len(message) != max_data:
+                    if len(message) != max_data:
+                        break
+                replicasocket.close()
+                m = decode_message(all_data)
+                if m.client_request_id == self.client_request_id:
+                    print 'Client %d request %d is received in %s' % (self.client_id , self.client_request_id , time.ctime(int(time.time())))
+                    self.client_request_id += 1
                     break
-            replicasocket.close()
+                else:
+                    nextTimeout = nextTimeout - (time.time() - t)
 
-            m = decode_message(all_data)
-            print 'Client %d request %d is received in %s' % (self.client_id , self.client_request_id , time.ctime(int(time.time())))
-            self.client_request_id += 1
-
-        except socket.timeout:
-            print 'Client %d request %d timeout.' % (self.client_id , self.client_request_id)
-            self.view = self.view + 1
-            #broadcast view+1 to every replica
-            self.timeout *= 2
-            self.client_send_message()
+            except socket.timeout:
+                print 'Client %d request %d timeout.' % (self.client_id , self.client_request_id)
+                self.view = self.view + 1
+                #broadcast view+1 to every replica
+                self.timeout *= 2
+                self.client_send_message()

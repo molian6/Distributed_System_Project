@@ -85,18 +85,19 @@ class Replica(object):
         send_message(self.client_ports_info[client_id][0], self.client_ports_info[client_id][1], encode_message(msg))
 
     def logging(self, req_id):
+        value = self.received_propose_list[req_id][2]
         if self.last_exec_req + 1 == req_id:
             # logging
             self.last_exec_req += 1
             self.write_to_disk(self.last_exec_req)
             if self.received_propose_list[req_id][2] != "NOOP":
                 self.send_response_to_client(self.last_exec_req)
-            learned_list[req_id] = [value , True]
+            self.learned_list[req_id] = [value , True]
             #send logging message to client
             if req_id+1 in self.learned_list and self.learned_list[req_id+1][1] == False:
                 self.logging(req_id+1)
         else:
-            learned_list[req_id] = [value , False]
+            self.learned_list[req_id] = [value , False]
 
     def beProposor(self):
         self.num_followers = 0
@@ -168,6 +169,7 @@ class Replica(object):
         #   broadcast AcceptValue(proposorid + req_id + value)
         if m.sender_id >= self.view:
             self.view = m.sender_id
+            print m.request_id, m.client_id, m.client_request_id, m.value, m.sender_id
             self.received_propose_list[m.request_id] = [m.client_id, m.sender_id, m.value, m.client_request_id]
             msg = Message(3, m.request_id, m.client_id, m.client_request_id, self.uid, m.value, None)
             self.broadcast_msg(encode_message(msg))
@@ -204,6 +206,7 @@ class Replica(object):
                     m.request_id = req_id
                     # change message type to proposeValue
                     m.mtype = 2
+                    print m.request_id, m.client_id, m.client_request_id, m.value
                     # encode message
                     msg = encode_message(m)
                     # broadcast message

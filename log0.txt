@@ -1,1 +1,2 @@
 Log for replica 0:
+request 0: This is message 0 from client 0 !!!

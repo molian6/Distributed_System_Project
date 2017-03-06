@@ -20,6 +20,7 @@ class Message():
         self.mtype = mtype
         self.request_id = request_id
         self.client_request_id = client_request_id
+        self.client_id = client_id
         self.sender_id = sender_id
         self.value = value
         self.received_propose_list = received_propose_list
