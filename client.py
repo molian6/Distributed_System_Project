@@ -1,6 +1,7 @@
-import config, time, socket
+import time, socket
 from datetime import datetime, timedelta
 from helper import *
+from config import Message
 
 # use for sending messages by script.
 # use for testing purpose
@@ -19,6 +20,8 @@ class Client:
     def __init__(self, my_ip, my_port, client_id, ports_info, e):
         self.ports_info = ports_info
         self.client_id = client_id
+        self.my_port = my_port
+        self.my_ip = my_ip
         self.client_request_id = 0
         self.view = 0
         self.timeout = 2

@@ -1,4 +1,5 @@
-import config, time, socket
+import time, socket
+from config import Message
 from datetime import datetime, timedelta
 from helper import *
 # Implement the protocol each replica will run
@@ -25,7 +26,7 @@ class Replica(object):
         self.client_ports_info = client_ports_info
         self.last_exec_req = -1
         self.receive_socket = create_listen_sockets(self.ports_info[self.uid][0], self.ports_info[self.uid][1])
-        print "create success!!!"
+        print "replica %d starts running at %.2f." % (self.uid , time.time())
         log_file = 'log%d.txt'%(self.uid)
         with open(log_file , 'w') as fid:
             fid.write('Log for replica %d:\n' % (self.uid))
@@ -47,35 +48,36 @@ class Replica(object):
                     break
             clientsocket.close()
 
-            self.handle_message(self.parse_message(all_data))
+            self.handle_message(decode_message(all_data))
 
     def handle_message(self, m):
         if (m.mtype == 0):
-            self.handle_IAmYourLeader(self, m)
+            self.handle_IAmYourLeader(m)
         elif (m.mtype == 0):
-            self.handle_YouAreMyLeader(self, m)
+            self.handle_YouAreMyLeader(m)
         elif (m.mtype == 0):
-            self.handle_ProposeValue(self, m)
+            self.handle_ProposeValue(m)
         elif (m.mtype == 0):
-            self.handle_AcceptValue(self, m)
+            self.handle_AcceptValue(m)
         elif (m.mtype == 0):
-            self.handle_TimeOut(self, m)
+            self.handle_TimeOut(m)
         elif (m.mtype == 0):
-            self.handle_Request(self, m)
+            self.handle_Request(m)
 
     def sleep_forever(self):
         while True:
             time.sleep(1000)
 
     def broadcast_msg(self, m):
-        for v in self.ports_info:
+        for key in self.ports_info.keys():
+            v = self.ports_info[key]
             send_message(v[0], v[1], m)
 
-    def write_to_disk(req_id):
+    def write_to_disk(self , req_id):
         with open(self.log_file , 'a') as fid:
             fid.write('request %d: %s\n'%(req_id , self.received_propose_list[req_id][2]))
 
-    def send_response_to_client(req_id):
+    def send_response_to_client(self , req_id):
         client_id = self.received_propose_list[req_id][0]
         msg = Message(6, None, None, None, None, None, None)
         send_message(self.client_ports_info[client_id][0], self.client_ports_info[client_id][1], encode_message(msg))
@@ -121,6 +123,7 @@ class Replica(object):
 
         if self.num_followers == self.f + 1:
             #   fill the holes with NOOP
+            print "replica %d becomes leader!!!" % (self.uid)
             for i in range(0,max(self.received_propose_list.keys(), key = int)):
                 if not i in self.received_propose_list:
                     self.received_propose_list[i] = [-1, self.uid, "NOOP", None]
