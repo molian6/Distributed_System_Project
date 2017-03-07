@@ -42,7 +42,7 @@ class Client:
         send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encoded_msg)
         nextTimeout = self.timeout
         # nextTimeout = time.time() + self.timeout
-        while True:    
+        while True:
             self.client_listen_socket.settimeout(nextTimeout)
             try:
                 t = time.time()
@@ -50,20 +50,20 @@ class Client:
                 max_data = 1024
                 all_data = ""
                 while True:
-                    try: 
+                    try:
                         message = replicasocket.recv(max_data)
                         all_data += message.decode("utf-8")
                         if len(message) != max_data:
                             break
                     except socket.error, e:
-                        if str(e) == "[Errno 35] Resource temporarily unavailable": 
+                        if str(e) == "[Errno 35] Resource temporarily unavailable":
                             time.sleep(0.1)
                         else:
                             raise e
                 replicasocket.close()
                 m = decode_message(all_data)
                 if m.client_request_id == self.client_request_id:
-                    print 'Client %d request %d is received in %s' % (self.client_id , self.client_request_id , time.ctime(int(time.time())))
+                    print 'Client %d request %d is executed in %s' % (self.client_id , self.client_request_id , time.ctime(int(time.time())))
                     self.client_request_id += 1
                     break
                 else:
@@ -72,7 +72,7 @@ class Client:
             except socket.timeout:
                 print 'Client %d request %d timeout.' % (self.client_id , self.client_request_id)
                 self.view = self.view + 1
-                msg = Message(4, None, None, None, None, None, None)
+                msg = Message(4, None, None, None, self.view, None, None)
                 self.broadcast_msg(encode_message(msg))
                 self.timeout *= 2
                 self.client_send_message()

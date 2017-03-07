@@ -12,7 +12,7 @@ class Replica(object):
     client_ports_info = None #a map client_id-> [ip, ports]
     request_count = {} # (req_id,value) -> count
     received_propose_list = {} #req_id -> [client_id, proposor, value, client_request_id]
-    learned_list = {} # req_id -> value, executed?
+    learned_list = {} # req_id -> [value, executed, client_id, client_request_id]
     waiting_request_list = []
     request_mapping = {} #(client_id, client_request_id) -> req_id
     log_file = None
@@ -76,31 +76,40 @@ class Replica(object):
             v = self.ports_info[key]
             send_message(v[0], v[1], m)
 
-    def write_to_disk(self , req_id):
-        with open(self.log_file , 'a') as fid:
-            fid.write('request %d: %s\n'%(req_id , self.received_propose_list[req_id][2]))
+    # def write_to_disk(self , req_id):
+    #     print "replica %d is write to request_id %d to disk" % (self.uid , req_id)))
+    #     # print self.learned_list
+    #     with open(self.log_file , 'a') as fid:
+    #         fid.write('request %d: %s\n'%(req_id , self.learned_list[req_id][0]))
 
-    def send_response_to_client(self , req_id):
-        client_id = self.received_propose_list[req_id][0]
-        client_request_id = self.received_propose_list[req_id][3]
+    # def send_response_to_client(self , req_id):
+    def send_response_to_client(self , client_id, client_request_id):
+        # client_id = self.received_propose_list[req_id][0]
+        # client_request_id = self.received_propose_list[req_id][3]
         msg = Message(6, None, None, client_request_id, None, None, None)
         send_message(self.client_ports_info[client_id][0], self.client_ports_info[client_id][1], encode_message(msg))
 
-    def logging(self, m):
-        value = m.value
-        req_id = m.request_id
+    def logging(self, req_id, value, client_id, client_request_id):
+        # value = m.value
+        # req_id = m.request_id
         if self.last_exec_req + 1 == req_id:
             # logging
             self.last_exec_req += 1
-            self.write_to_disk(self.last_exec_req)
+
+            with open(self.log_file , 'a') as fid:
+                fid.write('request %d: %s\n'%(req_id , value))
+            self.learned_list[req_id] = [value , True, client_id, client_request_id]
+
+            # self.write_to_disk(self.last_exec_req)
             if value != "NOOP":
-                self.send_response_to_client(self.last_exec_req)
-            self.learned_list[req_id] = [value , True]
-            #send logging message to client
+                #send logging message to client
+                self.send_response_to_client(client_id, client_request_id)
+
+            # TODO: its next req_id has been logged does not mean the one after the next is logged??
             if req_id+1 in self.learned_list and self.learned_list[req_id+1][1] == False:
-                self.logging(req_id+1)
+                self.logging(req_id+1, learned_list[req_id+1][0], learned_list[req_id+1][2], learned_list[req_id+1][3])
         else:
-            self.learned_list[req_id] = [value , False]
+            self.learned_list[req_id] = [value , False, client_id, client_request_id]
 
     def beProposor(self):
         self.num_followers = 0
@@ -144,7 +153,7 @@ class Replica(object):
                 msg = Message(2, key, x[0], x[3], self.uid, x[2], None)
                 self.broadcast_msg(encode_message(msg))
                 if x[2] != 'NOOP':
-                    self.request_mapping[(x[0] , x[3])] = key
+                    self.request_mapping[(x[0] , x[3])] = int(key)
 
             #   propose everything in waiting_request_list
             while len(self.waiting_request_list) != 0:
@@ -186,13 +195,14 @@ class Replica(object):
         else:
             self.request_count[p] += 1
         if self.request_count[p] == self.f + 1:
-            self.logging(m)
+            self.logging(m.request_id, m.value, m.client_id, m.client_request_id)
 
     def handle_TimeOut(self, m):
         if self.debug: print 'handle_TimeOut', m
-        self.view += 1
-        if (self.view == self.uid):
-            self.beProposor()
+        if self.view < m.sender_id: #ugli implementation sender_id here means client view
+            self.view = m.sender_id
+            if (self.view == self.uid):
+                self.beProposor()
 
     def handle_Request(self, m):
         if self.debug: print 'handle_request', m
