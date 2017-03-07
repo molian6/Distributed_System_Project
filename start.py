@@ -8,9 +8,10 @@ import time, multiprocessing
 import random
 
 # Configure command line options
-DEFAULT_NUM_FAILURES = 5
-DEFAULT_NUM_CLIENTS = 5
+DEFAULT_NUM_FAILURES = 3
+DEFAULT_NUM_CLIENTS = 1
 DEFAULT_PORT_NUM = 6000
+DEBUG = False
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 def create_ports_map(n, ip_add, ports):
@@ -35,13 +36,13 @@ def Paxoservice():
 	print 'Create %d clients successfully!' % (DEFAULT_NUM_CLIENTS)
 	replica_list = []
 	for i in range(2*DEFAULT_NUM_FAILURES+1):
-		p = multiprocessing.Process(target=replica.Replica, args = (DEFAULT_NUM_FAILURES , i , server_ports_info , client_ports_info , False)) #f, ID, port_info
+		p = multiprocessing.Process(target=replica.Replica, args = (DEFAULT_NUM_FAILURES , i , server_ports_info , client_ports_info , DEBUG)) #f, ID, port_info
 		p.start()
 		replica_list.append(p)
 	print 'Create %d replicas successfully!' % (2*DEFAULT_NUM_FAILURES+1)
 	# operation here
 
-	time.sleep(2)
+	time.sleep(3)
 	t = time.time() + 2
 	while time.time() < t:
 		a = random.randint(0,DEFAULT_NUM_CLIENTS-1)
@@ -50,12 +51,12 @@ def Paxoservice():
 	time.sleep(2)
 
 	replica_list[0].terminate()
-	t = time.time() + 2
+	t = time.time() + 15
 	while time.time() < t:
 		a = random.randint(0,DEFAULT_NUM_CLIENTS-1)
 		if client_list[a][1].is_set() == False:
 			client_list[a][1].set()
-	time.sleep(2)
+	time.sleep(5)
 
 	# terminate
 	for p in client_list:

@@ -24,22 +24,28 @@ class Client:
         self.my_ip = my_ip
         self.client_request_id = 0
         self.view = 0
-        self.timeout = 2
+        self.timeout = 5
         self.client_listen_socket = create_listen_sockets(self.my_ip, self.my_port)
         self.e = e
         print 'Client %d starts running at %s' % (self.client_id , time.ctime(int(time.time())))
         while True:
             #self.time = time.time()
             e.wait()
-            print 'Client %d send message %d at time %s.' % (self.client_id , self.client_request_id , time.ctime(int(time.time())))
             self.client_send_message()
             e.clear()
 
     def client_send_message(self):
+        #print 'Client %d send message %d timeout %d at time %s.' % (self.client_id , self.client_request_id , self.timeout , time.ctime(int(time.time())))
         m = 'This is message %d from client %d !!!' % (self.client_request_id, self.client_id)
+        #print 'Client %d send message %d timeout %d at time %s.' % (self.client_id , self.client_request_id , self.timeout , time.ctime(int(time.time())))
         msg = Message(5, None, self.client_id, self.client_request_id, None, m, None);
+        #print 'Client %d send message %d timeout %d at time %s.' % (self.client_id , self.client_request_id , self.timeout , time.ctime(int(time.time())))
         encoded_msg = encode_message(msg)
-        send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encoded_msg)
+        #print 'Client %d send message %d timeout %d at time %s.' % (self.client_id , self.client_request_id , self.timeout , time.ctime(int(time.time())))
+        self.broadcast_msg(encoded_msg)
+        print 'Client %d send message %d timeout %d at time %s.' % (self.client_id , self.client_request_id , self.timeout , time.ctime(int(time.time())))
+        
+        #send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encoded_msg)
         nextTimeout = self.timeout
         # nextTimeout = time.time() + self.timeout
         while True:
@@ -65,7 +71,7 @@ class Client:
                 if m.client_request_id == self.client_request_id:
                     print 'Client %d request %d is executed in %s' % (self.client_id , self.client_request_id , time.ctime(int(time.time())))
                     self.client_request_id += 1
-                    break
+                    return
                 else:
                     nextTimeout = nextTimeout - (time.time() - t)
 
@@ -75,7 +81,9 @@ class Client:
                 msg = Message(4, None, None, None, self.view, None, None)
                 self.broadcast_msg(encode_message(msg))
                 self.timeout *= 2
+                time.sleep(0.5)
                 self.client_send_message()
+                return 
 
     def broadcast_msg(self, m):
         for key in self.ports_info.keys():
