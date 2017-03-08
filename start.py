@@ -14,18 +14,23 @@ DEFAULT_PORT_NUM = 6000
 DEBUG = False
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-def create_ports_map(n, ip_add, ports):
+def read_ports_info(filename, n):
 	s = {}
-	for i in range(0, n):
-		s[i] = [ip_add, ports+i]
+	with open(filename) as f:
+		for i in range(n):
+			l = f.readline()
+			info = l.split(' ')
+			s[int(info[0])] = [info[1], int(info[2])]
+	print s
 	return s
 
 def Paxoservice():
 	random.seed(1)
-	server_ports_info = create_ports_map(2*DEFAULT_NUM_FAILURES+1, "127.0.0.1", 5500)
-	client_ports_info = create_ports_map(DEFAULT_NUM_CLIENTS, "127.0.0.1", 6500)
+	server_ports_info = read_ports_info("server_ports.txt" ,2*DEFAULT_NUM_FAILURES+1)
+	client_ports_info = read_ports_info("client_ports.txt" ,DEFAULT_NUM_CLIENTS)
 	print server_ports_info
 	print client_ports_info
+
 	# create replicas
 	client_list = []
 	for i in range(DEFAULT_NUM_CLIENTS):

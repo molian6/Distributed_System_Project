@@ -6,6 +6,7 @@ import random
 from config import Message
 
 def send_message(host, port_number, m):
+    # TODO: I think its better to set a timeout here
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect((host, port_number))
     s.sendall(m)
