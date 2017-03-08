@@ -16,6 +16,8 @@ class Replica(object):
     waiting_request_list = []
     request_mapping = {} #(client_id, client_request_id) -> req_id
     log_file = None
+    replica_socket_map = {} #client_id -> socket
+    client_socket_map = {} #uid -> socket
 
     num_followers = None
     last_exec_req = None
@@ -29,10 +31,20 @@ class Replica(object):
         self.receive_socket = create_listen_sockets(self.ports_info[self.uid][0], self.ports_info[self.uid][1])
         self.view = -1
         self.debug = debug
-        print "replica %d starts running at %s." % (self.uid , time.ctime(int(time.time())))
         self.log_file = 'log%d.txt'%(self.uid)
+
+        # create all client sending socket
+        for client_id, addr in self.client_ports_info.iteritems():
+            self.client_socket_map[client_id] = create_sending_socket(addr[0], addr[1])
+
+        # create all replica sending socket
+        for uid, addr in self.ports_info.iteritems():
+            self.replica_socket_map[uid] = create_sending_socket(addr[0], addr[1])
+
         with open(self.log_file , 'w') as fid:
             fid.write('Log for replica %d:\n' % (self.uid))
+
+        print "replica %d starts running at %s." % (self.uid , time.ctime(int(time.time())))
 
         if (self.uid == 0):
             time.sleep(1)
@@ -53,11 +65,10 @@ class Replica(object):
             clientsocket.settimeout(3)
             try:
                 self.handle_message(decode_message(all_data))
-                clientsocket.close()
+                # clientsocket.close()
             except socket.timeout:
-                clientsocket.close()
-            
-            #print all_data , self.uid
+                pass
+                # clientsocket.close()
 
     def handle_message(self, m):
         if (m.mtype == 0):
@@ -77,42 +88,28 @@ class Replica(object):
         while True:
             time.sleep(1000)
 
+    # broadcast_msg is always broadcast to replicas
     def broadcast_msg(self, m):
-        for key in self.ports_info.keys():
-            if key >= self.view:
-                v = self.ports_info[key]
-                #print key
-                send_message(v[0], v[1], m)
+        for uid, v in self.ports_info.iteritems():
+            if uid >= self.view:
+                self.replica_socket_map[uid] = send_message(self.replica_socket_map[uid], v[0], v[1], m)
 
-    # def write_to_disk(self , req_id):
-    #     print "replica %d is write to request_id %d to disk" % (self.uid , req_id)))
-    #     # print self.learned_list
-    #     with open(self.log_file , 'a') as fid:
-    #         fid.write('request %d: %s\n'%(req_id , self.learned_list[req_id][0]))
-
-    # def send_response_to_client(self , req_id):
     def send_response_to_client(self , client_id, client_request_id):
-        # client_id = self.received_propose_list[req_id][0]
-        # client_request_id = self.received_propose_list[req_id][3]
         msg = Message(6, None, None, client_request_id, None, None, None)
-        send_message(self.client_ports_info[client_id][0], self.client_ports_info[client_id][1], encode_message(msg))
+        self.client_socket_map[client_id] = send_message(self.client_socket_map[client_id], self.client_ports_info[client_id][0], self.client_ports_info[client_id][1], encode_message(msg))
 
     def logging(self, req_id, value, client_id, client_request_id):
-        # value = m.value
-        # req_id = m.request_id
         if self.last_exec_req + 1 == req_id:
             # logging
             self.last_exec_req += 1
-
+            # write to disk
             with open(self.log_file , 'a') as fid:
                 fid.write('request %d: %s\n'%(req_id , value))
             self.learned_list[req_id] = [value , True, client_id, client_request_id]
-
-            # self.write_to_disk(self.last_exec_req)
+            #send logging message to client
             if value != "NOOP":
-                #send logging message to client
                 self.send_response_to_client(client_id, client_request_id)
-
+            # log next message
             if req_id+1 in self.learned_list and self.learned_list[req_id+1][1] == False:
                 self.logging(req_id+1, learned_list[req_id+1][0], learned_list[req_id+1][2], learned_list[req_id+1][3])
         else:
@@ -134,7 +131,7 @@ class Replica(object):
             self.view = m.sender_id
             msg = Message(1, None, None, None, self.uid, None, self.received_propose_list)
             #print self.ports_info[self.view][0],self.ports_info[self.view][1]
-            send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encode_message(msg))
+            self.replica_socket_map[self.view] = send_message(self.replica_socket_map[self.view], self.ports_info[self.view][0], self.ports_info[self.view][1], encode_message(msg))
 
     def handle_YouAreMyLeader(self, m):
         if self.debug: print 'handle_YouAreMyLeader', m
@@ -183,10 +180,12 @@ class Replica(object):
 
     def handle_ProposeValue(self, m):
         if self.debug: print 'handle_ProposeValue', m.client_id, m.client_request_id
+        print 'handle_ProposeValue', m.client_id, m.client_request_id
         # if sender_id > view, update view & update
         #   update received_propose_list
         #   broadcast AcceptValue(proposorid + req_id + value)
         if m.sender_id >= self.view:
+            print "I am here 3"
             if self.debug: print 'handle_ProposeValue', m.client_id, m.client_request_id
             self.view = m.sender_id
             if self.debug: print 'handle_ProposeValue', m.client_id, m.client_request_id
@@ -200,6 +199,7 @@ class Replica(object):
 
     def handle_AcceptValue(self, m):
         if self.debug: print 'handle_AcceptValue', m.client_id, m.client_request_id
+        print 'handle_AcceptValue', m.client_id, m.client_request_id
         # if any value reach the majority, do logging
         p = (m.request_id , m.value)
         if p not in self.request_count:
@@ -217,9 +217,10 @@ class Replica(object):
                 self.beProposor()
 
     def handle_Request(self, m):
-        #print 'handle_request', m.client_id, m.client_request_id , self.uid
+        print 'handle_request', m.client_id, m.client_request_id , self.uid
         if self.view == self.uid:
             if self.num_followers >= self.f + 1:
+                print "I am here 1"
                 # has enough followers
                 if (m.client_id , m.client_request_id) not in self.request_mapping.keys():
                     # edit message
@@ -237,6 +238,7 @@ class Replica(object):
                     self.broadcast_msg(msg)
                     # add req_id to mapping list
                     self.request_mapping[(m.client_id , m.client_request_id)] = req_id
+                print "I am here 2"
             else:
                 # waitting for followers, add request to waitlist
                 self.waiting_request_list.append(m)
