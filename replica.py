@@ -135,31 +135,44 @@ class Replica(object):
         if m.sender_id >= self.view:
             self.view = m.sender_id
             msg = Message(1, None, None, None, self.uid, None, self.received_propose_list)
+            print 'Recieve I Am Your Leader!', msg.sender_id, msg.client_id, msg.client_request_id
             #print self.ports_info[self.view][0],self.ports_info[self.view][1]
             send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encode_message(msg))
             #time.sleep(0.2)
     def handle_YouAreMyLeader(self, m):
-        if self.debug: print 'handle_YouAreMyLeader', m
+        #if self.debug: 
+        print 'handle_YouAreMyLeader', m.sender_id, m.client_id, m.client_request_id
         # update the most recent value for each blank in received_propose_list.
         self.num_followers += 1
-        for key, x in m.received_propose_list.iteritems():
+        for key in m.received_propose_list.keys():
+            x = m.received_propose_list[key]
+            key = int(key)
             # if update every value to the newest proposer value
             if key not in self.received_propose_list.keys():
+                print key , x
                 self.received_propose_list[key] = x
             elif x[1] > self.received_propose_list[key][1]:
                 self.received_propose_list[key] = x
 
         if self.num_followers == self.f + 1:
             #   fill the holes with NOOP
+            #print "replica %d becomes leader!!! view %d" % (self.uid , self.view)
             if len(self.received_propose_list) > 0:
                 for i in range(0,max(self.received_propose_list.keys(), key = int)):
                     if not i in self.received_propose_list:
                         self.received_propose_list[i] = [-1, self.uid, "NOOP", None]
-
+            #print "replica %d becomes leader!!! view %d" % (self.uid , self.view)
+            #print 'length:', len(self.received_propose_list.keys())
+            #for key in self.received_propose_list.keys():
+            #    print key , self.received_propose_list[key]
+            print self.received_propose_list
             #   propose everything in the list
-            for key, x in self.received_propose_list.iteritems():
+            for key in self.received_propose_list.keys():
+                x = self.received_propose_list[key]
                 msg = Message(2, key, x[0], x[3], self.uid, x[2], None)
+                print key
                 self.broadcast_msg(encode_message(msg))
+                print key
                 if x[2] != 'NOOP':
                     self.request_mapping[(x[0] , x[3])] = int(key)
             print "replica %d becomes leader!!! view %d" % (self.uid , self.view)
