@@ -24,7 +24,7 @@ class Client:
         self.my_ip = my_ip
         self.client_request_id = 0
         self.view = 0
-        self.timeout = 2
+        self.timeout = 5
         self.client_listen_socket = create_listen_sockets(self.my_ip, self.my_port)
         self.e = e
         print 'Client %d starts running at %s' % (self.client_id , time.ctime(int(time.time())))

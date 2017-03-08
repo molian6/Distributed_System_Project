@@ -8,8 +8,8 @@ import time, multiprocessing
 import random
 
 # Configure command line options
-DEFAULT_NUM_FAILURES = 3
-DEFAULT_NUM_CLIENTS = 3
+DEFAULT_NUM_FAILURES = 7
+DEFAULT_NUM_CLIENTS = 5
 DEFAULT_PORT_NUM = 6000
 DEBUG = False
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -50,17 +50,19 @@ def Paxoservice():
 			client_list[a][1].set()
 	#time.sleep(5)
 
-	for i in range(2):
+	for i in range(DEFAULT_NUM_FAILURES):
 		replica_list[i].terminate()
 		print 'termimate replica', i
 
-		t = time.time() + 10
-		while time.time() < t:
-			a = random.randint(i,DEFAULT_NUM_CLIENTS-1)
+		#t = time.time() + 20
+		num_request = 0
+		while num_request < 20:
+			a = random.randint(0,DEFAULT_NUM_CLIENTS-1)
 			if client_list[a][1].is_set() == False:
 				client_list[a][1].set()
+				num_request += 1
 		#time.sleep(10)
-
+	time.sleep(40)
 	#replica_list[1].terminate()
 	#print 'termimate replica 1'
 	'''
@@ -86,9 +88,11 @@ def Paxoservice():
 
 	# check log files.
 	flag = True
-	with open('log0.txt') as fid:
+	with open('log%d.txt'%(DEFAULT_NUM_FAILURES)) as fid:
 		logs1 = fid.readlines()[1:]
 	for i in range(2*DEFAULT_NUM_FAILURES):
+		if i <= DEFAULT_NUM_FAILURES:
+			continue
 		with open('log%d.txt'%(i+1)) as fid:
 			logs2 = fid.readlines()[1:]
 			for j in range(len(logs1)):

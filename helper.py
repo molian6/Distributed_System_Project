@@ -1,5 +1,5 @@
 import socket
-import ruamel_yaml as yaml
+import ruamel.yaml as yaml
 import json
 import time
 import random
@@ -28,8 +28,7 @@ from config import Message
 #     #s.close()
 
 def send_message(host, port_number, m):
-    if len(m) > 10000:
-        print len(m)
+
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect((host, port_number))
     s.sendall(m)

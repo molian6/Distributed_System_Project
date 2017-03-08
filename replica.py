@@ -149,7 +149,7 @@ class Replica(object):
 
     def handle_YouAreMyLeader(self, m):
         #if self.debug:
-        print 'handle_YouAreMyLeader', m.sender_id, m.client_id, m.client_request_id
+        #print 'handle_YouAreMyLeader', m.sender_id, m.client_id, m.client_request_id
         # update the most recent value for each blank in received_propose_list.
         self.num_followers += 1
         for key in m.received_propose_list.keys():
