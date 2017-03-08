@@ -1,10 +1,8 @@
 class Message():
     mtype = None
-    #Sender_id = None
     request_id = None
     client_id = None
     client_request_id = None
-    #mcontent = None
     sender_id = None
     value = None
     received_propose_list = None

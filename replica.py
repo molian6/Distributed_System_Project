@@ -92,12 +92,6 @@ class Replica(object):
                 send_message(v[0], v[1], m)
                 #time.sleep(0.2)
 
-    # def write_to_disk(self , req_id):
-    #     print "replica %d is write to request_id %d to disk" % (self.uid , req_id)))
-    #     # print self.learned_list
-    #     with open(self.log_file , 'a') as fid:
-    #         fid.write('request %d: %s\n'%(req_id , self.learned_list[req_id][0]))
-
     # def send_response_to_client(self , req_id):
     def send_response_to_client(self , client_id, client_request_id):
         # client_id = self.received_propose_list[req_id][0]
