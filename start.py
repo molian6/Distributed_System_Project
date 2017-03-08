@@ -9,7 +9,7 @@ import random
 
 # Configure command line options
 DEFAULT_NUM_FAILURES = 3
-DEFAULT_NUM_CLIENTS = 1
+DEFAULT_NUM_CLIENTS = 3
 DEFAULT_PORT_NUM = 6000
 DEBUG = False
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -21,7 +21,7 @@ def create_ports_map(n, ip_add, ports):
 	return s
 
 def Paxoservice():
-
+	random.seed(1)
 	server_ports_info = create_ports_map(2*DEFAULT_NUM_FAILURES+1, "127.0.0.1", 5500)
 	client_ports_info = create_ports_map(DEFAULT_NUM_CLIENTS, "127.0.0.1", 6500)
 	print server_ports_info
@@ -43,20 +43,36 @@ def Paxoservice():
 	# operation here
 
 	time.sleep(3)
-	t = time.time() + 2
+	t = time.time() + 5
 	while time.time() < t:
 		a = random.randint(0,DEFAULT_NUM_CLIENTS-1)
 		if client_list[a][1].is_set() == False:
 			client_list[a][1].set()
-	time.sleep(2)
+	#time.sleep(5)
 
-	replica_list[0].terminate()
-	t = time.time() + 15
+	for i in range(2):
+		replica_list[i].terminate()
+		print 'termimate replica', i
+
+		t = time.time() + 30
+		while time.time() < t:
+			a = random.randint(i,DEFAULT_NUM_CLIENTS-1)
+			if client_list[a][1].is_set() == False:
+				client_list[a][1].set()
+		#time.sleep(10)
+
+	#replica_list[1].terminate()
+	#print 'termimate replica 1'
+	'''
+	t = time.time() + 40
 	while time.time() < t:
 		a = random.randint(0,DEFAULT_NUM_CLIENTS-1)
 		if client_list[a][1].is_set() == False:
 			client_list[a][1].set()
-	time.sleep(5)
+	time.sleep(10)
+	'''
+
+
 
 	# terminate
 	for p in client_list:

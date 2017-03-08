@@ -2,22 +2,26 @@ import socket
 import ruamel.yaml as yaml
 import json
 import time
+import random
 from config import Message
 
 def send_message(host, port_number, m):
+    sleeptime = random.randint(0,2)/10.0
+    #time.sleep(sleeptime)
+    #if random.randint(0,7) == 0:
+    #    return
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.settimeout(0.5)
-    try:
-        if s.connect_ex((host, port_number)) == 0:
-            try:
-                s.sendall(str.encode(m))
-            except Exception, e:
-                print 'Error: %d' % (port_number), e
-        time.sleep(0.02)
-        s.close()
-    except socket.timeout:
-        s.close()
+    if s.connect_ex((host, port_number)) == 0:
+        s.settimeout(2)
+        try:
+            s.sendall(str.encode(m))
+        except Exception, e:
+            print 'Error: %d' % (port_number), e
+        finally:
+            s.close()
+    #time.sleep(0.2)
+    #s.close()
 
 def create_listen_sockets(host, port_number):
     #print "#############"
@@ -25,7 +29,7 @@ def create_listen_sockets(host, port_number):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((host, port_number))
-    s.listen(20000)
+    s.listen(2000)
     return s
 
 def encode_message(m):

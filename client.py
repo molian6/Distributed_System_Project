@@ -53,7 +53,7 @@ class Client:
             try:
                 t = time.time()
                 replicasocket, address = self.client_listen_socket.accept()
-                max_data = 1024
+                max_data = 64000
                 all_data = ""
                 while True:
                     try:
@@ -81,7 +81,8 @@ class Client:
                 msg = Message(4, None, None, None, self.view, None, None)
                 self.broadcast_msg(encode_message(msg))
                 self.timeout *= 2
-                time.sleep(0.5)
+                # TODO:
+                time.sleep(3)
                 self.client_send_message()
                 return 
 

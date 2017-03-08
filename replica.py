@@ -41,7 +41,7 @@ class Replica(object):
         while True:
             # connect
             clientsocket, address = self.receive_socket.accept()
-            max_data = 1024
+            max_data = 64000
             all_data = ""
 
             while True:
@@ -50,12 +50,13 @@ class Replica(object):
 
                 if len(message) != max_data:
                     break
-            clientsocket.settimeout(3)
-            try:
+            #clientsocket.settimeout(3)
+            #try:
+            if all_data != "":
                 self.handle_message(decode_message(all_data))
-                clientsocket.close()
-            except socket.timeout:
-                clientsocket.close()
+            clientsocket.close()
+            #except socket.timeout:
+            #    clientsocket.close()
             
             #print all_data , self.uid
 
@@ -83,6 +84,7 @@ class Replica(object):
                 v = self.ports_info[key]
                 #print key
                 send_message(v[0], v[1], m)
+                #time.sleep(0.2)
 
     # def write_to_disk(self , req_id):
     #     print "replica %d is write to request_id %d to disk" % (self.uid , req_id)))
@@ -114,7 +116,7 @@ class Replica(object):
                 self.send_response_to_client(client_id, client_request_id)
 
             if req_id+1 in self.learned_list and self.learned_list[req_id+1][1] == False:
-                self.logging(req_id+1, learned_list[req_id+1][0], learned_list[req_id+1][2], learned_list[req_id+1][3])
+                self.logging(req_id+1, self.learned_list[req_id+1][0], self.learned_list[req_id+1][2], self.learned_list[req_id+1][3])
         else:
             self.learned_list[req_id] = [value , False, client_id, client_request_id]
 
@@ -135,7 +137,7 @@ class Replica(object):
             msg = Message(1, None, None, None, self.uid, None, self.received_propose_list)
             #print self.ports_info[self.view][0],self.ports_info[self.view][1]
             send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encode_message(msg))
-
+            #time.sleep(0.2)
     def handle_YouAreMyLeader(self, m):
         if self.debug: print 'handle_YouAreMyLeader', m
         # update the most recent value for each blank in received_propose_list.
