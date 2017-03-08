@@ -54,7 +54,7 @@ def Paxoservice():
 		replica_list[i].terminate()
 		print 'termimate replica', i
 
-		t = time.time() + 30
+		t = time.time() + 10
 		while time.time() < t:
 			a = random.randint(i,DEFAULT_NUM_CLIENTS-1)
 			if client_list[a][1].is_set() == False:

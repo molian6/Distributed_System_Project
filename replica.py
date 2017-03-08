@@ -39,26 +39,32 @@ class Replica(object):
             self.beProposor()
 
         while True:
-            # connect
-            clientsocket, address = self.receive_socket.accept()
-            max_data = 64000
-            all_data = ""
+            all_data = self.receive_socket.recv(65535)
+            # print all_data
+            msg = all_data
+            self.handle_message(decode_message(msg))
 
-            while True:
-                message = clientsocket.recv(max_data)
-                all_data += message.decode("utf-8")
-
-                if len(message) != max_data:
-                    break
-            #clientsocket.settimeout(3)
-            #try:
-            if all_data != "":
-                self.handle_message(decode_message(all_data))
-            clientsocket.close()
-            #except socket.timeout:
-            #    clientsocket.close()
-            
-            #print all_data , self.uid
+        # while True:
+        #     # connect
+        #     clientsocket, address = self.receive_socket.accept()
+        #     max_data = 64000
+        #     all_data = ""
+        #
+        #     while True:
+        #         message = clientsocket.recv(max_data)
+        #         all_data += message.decode("utf-8")
+        #
+        #         if len(message) != max_data:
+        #             break
+        #     #clientsocket.settimeout(3)
+        #     #try:
+        #     if all_data != "":
+        #         self.handle_message(decode_message(all_data))
+        #     clientsocket.close()
+        #     #except socket.timeout:
+        #     #    clientsocket.close()
+        #
+        #     #print all_data , self.uid
 
     def handle_message(self, m):
         if (m.mtype == 0):
@@ -135,13 +141,14 @@ class Replica(object):
         if m.sender_id >= self.view:
             self.view = m.sender_id
             msg = Message(1, None, None, None, self.uid, None, self.received_propose_list)
-            print 'Recieve I Am Your Leader!', msg.sender_id, msg.client_id, msg.client_request_id
+            #print 'Recieve I Am Your Leader!', msg.sender_id, msg.client_id, msg.client_request_id
             #print self.ports_info[self.view][0],self.ports_info[self.view][1]
+            print len(encode_message(msg))
             send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encode_message(msg))
             #time.sleep(0.2)
 
     def handle_YouAreMyLeader(self, m):
-        #if self.debug: 
+        #if self.debug:
         print 'handle_YouAreMyLeader', m.sender_id, m.client_id, m.client_request_id
         # update the most recent value for each blank in received_propose_list.
         self.num_followers += 1
@@ -171,13 +178,11 @@ class Replica(object):
             for key in self.received_propose_list.keys():
                 x = self.received_propose_list[key]
                 msg = Message(2, key, x[0], x[3], self.uid, x[2], None)
-                #print key
                 self.broadcast_msg(encode_message(msg))
-                #print key
                 if x[2] != 'NOOP':
                     self.request_mapping[(x[0] , x[3])] = int(key)
             print "replica %d becomes leader!!! view %d" % (self.uid , self.view)
-            print len(self.waiting_request_list)
+            #print len(self.waiting_request_list)
             #   propose everything in waiting_request_list
             while len(self.waiting_request_list) != 0:
                 m = self.waiting_request_list.pop(0)
@@ -196,7 +201,7 @@ class Replica(object):
                     self.broadcast_msg(msg)
                     # add req_id to mapping list
                     self.request_mapping[(m.client_id , m.client_request_id)] = req_id
-        print 'handle_YouAreMyLeader', m.sender_id, m.client_id, m.client_request_id
+        #print 'handle_YouAreMyLeader', m.sender_id, m.client_id, m.client_request_id
 
     def handle_ProposeValue(self, m):
         if self.debug: print 'handle_ProposeValue', m.client_id, m.client_request_id
@@ -234,7 +239,7 @@ class Replica(object):
                 self.beProposor()
 
     def handle_Request(self, m):
-        print 'handle_request', m.client_id, m.client_request_id , self.uid
+        #print 'handle_request', m.client_id, m.client_request_id , self.uid
         if self.view == self.uid:
             if self.num_followers >= self.f + 1:
                 # has enough followers

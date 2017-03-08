@@ -1,40 +1,56 @@
 import socket
-import ruamel.yaml as yaml
+import ruamel_yaml as yaml
 import json
 import time
 import random
 from config import Message
 
+# def send_message(host, port_number, m):
+#     sleeptime = random.randint(0,2)/10.0
+#     #time.sleep(sleeptime)
+#     #if random.randint(0,7) == 0:
+#     #    return
+#     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+#     if s.connect_ex((host, port_number)) == 0:
+#         s.settimeout(2)
+#         try:
+#             t = time.time()
+#             #print 'start to send message at time', t
+#             s.sendall(str.encode(m))
+#             #print 'send message in %f seconds' % (time.time()-t)
+#             #print m
+#         except Exception, e:
+#             print 'Error: %d' % (port_number), e
+#         finally:
+#             s.close()
+#     #time.sleep(0.2)
+#     #s.close()
+
 def send_message(host, port_number, m):
-    sleeptime = random.randint(0,2)/10.0
-    #time.sleep(sleeptime)
-    #if random.randint(0,7) == 0:
-    #    return
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    if s.connect_ex((host, port_number)) == 0:
-        s.settimeout(2)
-        try:
-            t = time.time()
-            #print 'start to send message at time', t
-            s.sendall(str.encode(m))
-            #print 'send message in %f seconds' % (time.time()-t)
-            #print m
-        except Exception, e:
-            print 'Error: %d' % (port_number), e
-        finally:
-            s.close()
-    #time.sleep(0.2)
-    #s.close()
+    if len(m) > 10000:
+        print len(m)
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect((host, port_number))
+    s.sendall(m)
+    s.close()
 
 def create_listen_sockets(host, port_number):
     #print "#############"
     #print host,port_number
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((host, port_number))
-    s.listen(2000)
+    # s.listen(2000)
     return s
+# def create_listen_sockets(host, port_number):
+#     #print "#############"
+#     #print host,port_number
+#     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+#     s.bind((host, port_number))
+#     s.listen(2000)
+#     return s
 
 def encode_message(m):
     message = {
