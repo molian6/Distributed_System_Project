@@ -82,7 +82,7 @@ class Client:
                 self.broadcast_msg(encode_message(msg))
                 self.timeout *= 2
                 # TODO:
-                time.sleep(3)
+                time.sleep(0.5)
                 self.client_send_message()
                 return 
 

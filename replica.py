@@ -139,6 +139,7 @@ class Replica(object):
             #print self.ports_info[self.view][0],self.ports_info[self.view][1]
             send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encode_message(msg))
             #time.sleep(0.2)
+
     def handle_YouAreMyLeader(self, m):
         #if self.debug: 
         print 'handle_YouAreMyLeader', m.sender_id, m.client_id, m.client_request_id
@@ -165,14 +166,14 @@ class Replica(object):
             #print 'length:', len(self.received_propose_list.keys())
             #for key in self.received_propose_list.keys():
             #    print key , self.received_propose_list[key]
-            print self.received_propose_list
+            #print self.received_propose_list
             #   propose everything in the list
             for key in self.received_propose_list.keys():
                 x = self.received_propose_list[key]
                 msg = Message(2, key, x[0], x[3], self.uid, x[2], None)
-                print key
+                #print key
                 self.broadcast_msg(encode_message(msg))
-                print key
+                #print key
                 if x[2] != 'NOOP':
                     self.request_mapping[(x[0] , x[3])] = int(key)
             print "replica %d becomes leader!!! view %d" % (self.uid , self.view)
@@ -195,6 +196,7 @@ class Replica(object):
                     self.broadcast_msg(msg)
                     # add req_id to mapping list
                     self.request_mapping[(m.client_id , m.client_request_id)] = req_id
+        print 'handle_YouAreMyLeader', m.sender_id, m.client_id, m.client_request_id
 
     def handle_ProposeValue(self, m):
         if self.debug: print 'handle_ProposeValue', m.client_id, m.client_request_id
@@ -232,7 +234,7 @@ class Replica(object):
                 self.beProposor()
 
     def handle_Request(self, m):
-        #print 'handle_request', m.client_id, m.client_request_id , self.uid
+        print 'handle_request', m.client_id, m.client_request_id , self.uid
         if self.view == self.uid:
             if self.num_followers >= self.f + 1:
                 # has enough followers
