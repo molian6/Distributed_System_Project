@@ -16,11 +16,12 @@ class Replica(object):
     waiting_request_list = []
     request_mapping = {} #(client_id, client_request_id) -> req_id
     log_file = None
+    skip = False
 
     num_followers = None
     last_exec_req = None
 
-    def __init__(self, f, uid, ports_info, client_ports_info, debug):
+    def __init__(self, f, uid, ports_info, client_ports_info, debug, skip):
         self.uid = uid
         self.f = f
         self.ports_info = ports_info
@@ -29,6 +30,7 @@ class Replica(object):
         self.receive_socket = create_listen_sockets(self.ports_info[self.uid][0], self.ports_info[self.uid][1])
         self.view = -1
         self.debug = debug
+        self.skip = skip
         print "replica %d starts running at %s." % (self.uid , time.ctime(int(time.time())))
         self.log_file = 'log%d.txt'%(self.uid)
         with open(self.log_file , 'w') as fid:
@@ -40,31 +42,8 @@ class Replica(object):
 
         while True:
             all_data = self.receive_socket.recv(65535)
-            # print all_data
             msg = all_data
             self.handle_message(decode_message(msg))
-
-        # while True:
-        #     # connect
-        #     clientsocket, address = self.receive_socket.accept()
-        #     max_data = 64000
-        #     all_data = ""
-        #
-        #     while True:
-        #         message = clientsocket.recv(max_data)
-        #         all_data += message.decode("utf-8")
-        #
-        #         if len(message) != max_data:
-        #             break
-        #     #clientsocket.settimeout(3)
-        #     #try:
-        #     if all_data != "":
-        #         self.handle_message(decode_message(all_data))
-        #     clientsocket.close()
-        #     #except socket.timeout:
-        #     #    clientsocket.close()
-        #
-        #     #print all_data , self.uid
 
     def handle_message(self, m):
         if (m.mtype == 0):
@@ -80,41 +59,26 @@ class Replica(object):
         elif (m.mtype == 5):
             self.handle_Request(m)
 
-    def sleep_forever(self):
-        while True:
-            time.sleep(1000)
-
     def broadcast_msg(self, m):
         for key in self.ports_info.keys():
-            if key >= self.view:
-                v = self.ports_info[key]
-                #print key
-                send_message(v[0], v[1], m)
-                #time.sleep(0.2)
+            v = self.ports_info[key]
+            send_message(v[0], v[1], m)
 
     # def send_response_to_client(self , req_id):
     def send_response_to_client(self , client_id, client_request_id):
-        # client_id = self.received_propose_list[req_id][0]
-        # client_request_id = self.received_propose_list[req_id][3]
         msg = Message(6, None, None, client_request_id, None, None, None)
         send_message(self.client_ports_info[client_id][0], self.client_ports_info[client_id][1], encode_message(msg))
 
     def logging(self, req_id, value, client_id, client_request_id):
-        # value = m.value
-        # req_id = m.request_id
         if self.last_exec_req + 1 == req_id:
             # logging
             self.last_exec_req += 1
-
             with open(self.log_file , 'a') as fid:
                 fid.write('request %d: %s\n'%(req_id , value))
             self.learned_list[req_id] = [value , True, client_id, client_request_id]
-
-            # self.write_to_disk(self.last_exec_req)
             if value != "NOOP":
                 #send logging message to client
                 self.send_response_to_client(client_id, client_request_id)
-
             if req_id+1 in self.learned_list and self.learned_list[req_id+1][1] == False:
                 self.logging(req_id+1, self.learned_list[req_id+1][0], self.learned_list[req_id+1][2], self.learned_list[req_id+1][3])
         else:
@@ -126,7 +90,6 @@ class Replica(object):
         msg = Message(0, None, None, None, self.uid, None, None)
         self.broadcast_msg(encode_message(msg))
 
-
     def handle_IAmYourLeader(self, m):
         if self.debug:
             print 'handle_IAmYourLeader', m
@@ -135,15 +98,9 @@ class Replica(object):
         if m.sender_id >= self.view:
             self.view = m.sender_id
             msg = Message(1, None, None, None, self.uid, None, self.received_propose_list)
-            #print 'Recieve I Am Your Leader!', msg.sender_id, msg.client_id, msg.client_request_id
-            #print self.ports_info[self.view][0],self.ports_info[self.view][1]
-            print len(encode_message(msg))
             send_message(self.ports_info[self.view][0], self.ports_info[self.view][1], encode_message(msg))
-            #time.sleep(0.2)
 
     def handle_YouAreMyLeader(self, m):
-        #if self.debug:
-        #print 'handle_YouAreMyLeader', m.sender_id, m.client_id, m.client_request_id
         # update the most recent value for each blank in received_propose_list.
         self.num_followers += 1
         for key in m.received_propose_list.keys():
@@ -151,23 +108,16 @@ class Replica(object):
             key = int(key)
             # if update every value to the newest proposer value
             if key not in self.received_propose_list.keys():
-                print key , x
                 self.received_propose_list[key] = x
             elif x[1] > self.received_propose_list[key][1]:
                 self.received_propose_list[key] = x
 
         if self.num_followers == self.f + 1:
             #   fill the holes with NOOP
-            #print "replica %d becomes leader!!! view %d" % (self.uid , self.view)
             if len(self.received_propose_list) > 0:
                 for i in range(0,max(self.received_propose_list.keys(), key = int)):
                     if not i in self.received_propose_list:
                         self.received_propose_list[i] = [-1, self.uid, "NOOP", None]
-            #print "replica %d becomes leader!!! view %d" % (self.uid , self.view)
-            #print 'length:', len(self.received_propose_list.keys())
-            #for key in self.received_propose_list.keys():
-            #    print key , self.received_propose_list[key]
-            #print self.received_propose_list
             #   propose everything in the list
             for key in self.received_propose_list.keys():
                 x = self.received_propose_list[key]
@@ -176,7 +126,6 @@ class Replica(object):
                 if x[2] != 'NOOP':
                     self.request_mapping[(x[0] , x[3])] = int(key)
             print "replica %d becomes leader!!! view %d" % (self.uid , self.view)
-            #print len(self.waiting_request_list)
             #   propose everything in waiting_request_list
             while len(self.waiting_request_list) != 0:
                 m = self.waiting_request_list.pop(0)
@@ -195,11 +144,9 @@ class Replica(object):
                     self.broadcast_msg(msg)
                     # add req_id to mapping list
                     self.request_mapping[(m.client_id , m.client_request_id)] = req_id
-        #print 'handle_YouAreMyLeader', m.sender_id, m.client_id, m.client_request_id
 
     def handle_ProposeValue(self, m):
         if self.debug: print 'handle_ProposeValue', m.client_id, m.client_request_id
-        # if sender_id > view, update view & update
         #   update received_propose_list
         #   broadcast AcceptValue(proposorid + req_id + value)
         if m.sender_id >= self.view:
@@ -233,7 +180,6 @@ class Replica(object):
                 self.beProposor()
 
     def handle_Request(self, m):
-        #print 'handle_request', m.client_id, m.client_request_id , self.uid
         if self.view == self.uid:
             if self.num_followers >= self.f + 1:
                 # has enough followers
@@ -246,13 +192,16 @@ class Replica(object):
                     m.request_id = req_id
                     # change message type to proposeValue
                     m.mtype = 2
-                    #print m.request_id, m.client_id, m.client_request_id, m.value
                     # encode message
                     msg = encode_message(m)
                     # broadcast message
+                    self.request_mapping[(m.client_id , m.client_request_id)] = req_id
+                    if self.skip:
+                        if req_id % 10 == 8:
+                            return 
                     self.broadcast_msg(msg)
                     # add req_id to mapping list
-                    self.request_mapping[(m.client_id , m.client_request_id)] = req_id
+                    
             else:
                 # waitting for followers, add request to waitlist
                 self.waiting_request_list.append(m)

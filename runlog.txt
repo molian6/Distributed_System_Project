@@ -1,0 +1,14 @@
+{0: ['127.0.0.1', 5500], 1: ['127.0.0.1', 5501], 2: ['127.0.0.1', 5502], 3: ['127.0.0.1', 5503], 4: ['127.0.0.1', 5504], 5: ['127.0.0.1', 5505], 6: ['127.0.0.1', 5506]}
+{0: ['127.0.0.1', 6500], 1: ['127.0.0.1', 6501], 2: ['127.0.0.1', 6502]}
+Create 3 clients successfully!
+Create 7 replicas successfully!
+replica 1 starts running at Mon Mar  6 23:09:34 2017.
+Client 1 starts running at Mon Mar  6 23:09:34 2017
+replica 6 starts running at Mon Mar  6 23:09:34 2017.
+replica 4 starts running at Mon Mar  6 23:09:34 2017.
+replica 5 starts running at Mon Mar  6 23:09:34 2017.
+replica 2 starts running at Mon Mar  6 23:09:34 2017.
+Client 2 starts running at Mon Mar  6 23:09:34 2017
+replica 0 starts running at Mon Mar  6 23:09:34 2017.
+replica 3 starts running at Mon Mar  6 23:09:34 2017.
+Client 0 starts running at Mon Mar  6 23:09:34 2017
