@@ -9,8 +9,8 @@ import random
 import sys
 
 # Configure command line options
-DEFAULT_NUM_FAILURES = 7
-DEFAULT_NUM_CLIENTS = 5
+DEFAULT_NUM_FAILURES = 1
+DEFAULT_NUM_CLIENTS = 1
 DEBUG = False
 SKIP = False
 MODE = 1
@@ -109,7 +109,7 @@ def Paxoservice():
 					client_list[a][1].set()
 					num_request += 1
 		print 'Stop sending messages at %s.' % (time.ctime(int(time.time())))
-		time.sleep(10)
+		time.sleep(15)
 
 	checklist = []
 	# terminate

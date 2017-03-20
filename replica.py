@@ -37,7 +37,7 @@ class Replica(object):
             fid.write('Log for replica %d:\n' % (self.uid))
 
         if (self.uid == 0):
-            time.sleep(1)
+            time.sleep(3)
             self.beProposor()
 
         while True:
@@ -75,6 +75,7 @@ class Replica(object):
             self.last_exec_req += 1
             with open(self.log_file , 'a') as fid:
                 fid.write('request %d: %s\n'%(req_id , value))
+                print 'Replica %d writes message %d to log.' % (self.uid , req_id)
             self.learned_list[req_id] = [value , True, client_id, client_request_id]
             if value != "NOOP":
                 #send logging message to client
@@ -197,7 +198,7 @@ class Replica(object):
                     # broadcast message
                     self.request_mapping[(m.client_id , m.client_request_id)] = req_id
                     if self.skip:
-                        if req_id % 10 == 8:
+                        if req_id % 10 == 3:
                             return 
                     self.broadcast_msg(msg)
                     # add req_id to mapping list
